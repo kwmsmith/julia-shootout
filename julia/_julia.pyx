@@ -6,6 +6,8 @@ import numpy as np
 cimport cython
 cimport numpy as np
 
+np.import_array()
+
 #-----------------------------------------------------------------------------
 # External declarations
 #-----------------------------------------------------------------------------
@@ -73,4 +75,7 @@ def _compute_julia_ext(double complex c,
                        double lim=1000.):
     t0 = time()
     cdef unsigned int *julia = ext_compute_julia(c, N, bound, lim)
-    return None, time() - t0
+    cdef np.npy_intp dims[2]
+    dims[0] = N; dims[1] = N
+    arr = np.PyArray_SimpleNewFromData(2, dims, np.NPY_UINT, <void*>julia)
+    return arr, time() - t0

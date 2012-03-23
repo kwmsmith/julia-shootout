@@ -1,7 +1,7 @@
 #include "_julia_ext.h"
 #include <stdlib.h>
 
-#define CABS_SQ(z) (creal(z) * creal(z) + creal(z) * creal(z))
+#define CABS_SQ(z) (creal(z) * creal(z) + cimag(z) * cimag(z))
 
 unsigned int
 julia_kernel(double complex z,
