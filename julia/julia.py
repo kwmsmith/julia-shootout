@@ -1,6 +1,37 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2012, Enthought, Inc.
+# All rights reserved.  See LICENSE.txt for details.
+# 
+# Author: Kurt W. Smith
+# Date: 26 March 2012
+#-----------------------------------------------------------------------------
+
+'''
+julia.py
+
+Compute and plot the Julia set.
+
+This provides a self-contained---if somewhat contrived---example for comparing
+the runtimes between pure Python, Numpy, Cython, and Cython-wrapped C versions
+of the julia set calculation.
+
+It is meant to be run from the command line; run
+
+    $ python julia.py -h
+
+for details.
+
+'''
+
+# --- Python / Numpy imports -------------------------------------------------
 import numpy as np
 import pylab as pl
 from time import time
+
+# --- Local imports ----------------------------------------------------------
+# These are distinguished by being prefixed with an underscore, the idea being
+# that these functions are part of an extension module and aren't meant to be
+# used directly from external facing Python code...
 from _julia import (_julia_kernel, _compute_julia_no_opt, 
                     _compute_julia_opt, _compute_julia_ext)
 
@@ -13,6 +44,7 @@ def julia_kernel(z, c, lim, cutoff=1e6):
         z = z * z + c
         count += 1
     return count
+
 
 def compute_julia_python(c, N, bound=2, lim=1000., kernel=julia_kernel):
     ''' Pure Python calculation of the Julia set for a given `c`.  No NumPy
@@ -48,6 +80,7 @@ def compute_julia_numpy(c, N, bound=2, lim=1000.):
         iterations = iterations**2 + c
     np.seterr(**orig_err)
     return julia, time() - t0
+
 
 def printer(label, runtime, speedup):
     ''' Given a label, the total runtime in seconds, and a speedup value,
@@ -105,6 +138,7 @@ def plot_julia(kwargs, compute_julia):
 
     pl.show()
 
+
 def compare_runtimes(kwargs):
     ''' Given a parameter dict `kwargs`, runs different implementations of the
     Julia set computation and compares the runtimes of each.
@@ -160,8 +194,8 @@ if __name__ == '__main__':
                                          "the Julia set."))
 
     parser.add_argument('-N', type=int, default=100,
-            help=("The number of grid points in each dimension;"
-            "larger for more resolution."))
+            help=("The number of grid points in each dimension; "
+            "larger for more resolution. (default 100)"))
     parser.add_argument('-a', '--action', type=str, 
             default='plot', choices=('plot', 'compare'),
             help=("Either *plot* an approximation of a Julia set "

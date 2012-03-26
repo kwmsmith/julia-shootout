@@ -1,3 +1,11 @@
+/*-----------------------------------------------------------------------------
+ * Copyright (c) 2012, Enthought, Inc.
+ * All rights reserved.  See LICENSE.txt for details.
+ *  
+ * Author: Kurt W. Smith
+ * Date: 26 March 2012
+ --------------------------------------------------------------------------*/
+
 #include "_julia_ext.h"
 #include <stdlib.h>
 
