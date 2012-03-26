@@ -46,6 +46,8 @@ compute_julia(double complex c,
         grid[i] = -bound + i * step;
     }
 
+#pragma omp parallel for \
+    shared(grid, julia, c, lim) private(i,j,idx,x,y)
     for(i=0; i < N; i++) {
         x = grid[i];
         for(j=0; j < N; j++) {
