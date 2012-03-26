@@ -115,12 +115,12 @@ def compare_runtimes(kwargs):
 
     _, numpy_time = compute_julia_numpy(**kwargs)
     assert np.allclose(ref_julia, _)
-    printer("Pure Numpy (no Cython)", numpy_time,
+    printer("Python only + Numpy expressions", numpy_time,
             python_time / numpy_time)
 
     _, cython_kernel_time = compute_julia_python(kernel=_julia_kernel, **kwargs)
     assert np.allclose(ref_julia, _)
-    printer("Cythonized kernel", cython_kernel_time, 
+    printer("Python + cythonized kernel", cython_kernel_time, 
             python_time / cython_kernel_time)
 
     _, cython_no_opt_time = _compute_julia_no_opt(**kwargs)
@@ -135,7 +135,7 @@ def compare_runtimes(kwargs):
 
     _, ext_opt_time = _compute_julia_ext(**kwargs)
     assert np.allclose(ref_julia, _)
-    printer("External library version", ext_opt_time,
+    printer("All C version, wrapped with Cython", ext_opt_time,
             python_time / ext_opt_time)
 
 def main(args):
