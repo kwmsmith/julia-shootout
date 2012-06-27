@@ -12,9 +12,13 @@ from Cython.Distutils import build_ext
 
 import numpy as np
 
+extra_args = []
+# Uncomment the following line to enable OpenMP for GCC-ish compilers.
+extra_args = ["-fopenmp"]
+
 ext = Extension("_julia", 
                 ["_julia.pyx", "_julia_ext.c"],
-                extra_compile_args=["-fopenmp"])
+                extra_compile_args=extra_args)
 
 setup(
     cmdclass = {'build_ext': build_ext},
