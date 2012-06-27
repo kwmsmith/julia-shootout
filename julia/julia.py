@@ -114,27 +114,20 @@ def plot_julia(kwargs, compute_julia):
                   interpolation='nearest',
                   extent=(-bound, bound)*2)
         pl.colorbar()
-        pl.title(r"Julia set for $C={0.real:5.3f}+{0.imag:5.3f}i$ "
-        r"$[{1}\times{1}]$".format(kwargs['c'], kwargs['N']))
+        title = r"Julia set for $C={0.real:5.3f}+{0.imag:5.3f}i$ $[{1}\times{1}]$"
+        pl.title(title.format(kwargs['c'], kwargs['N']))
         pl.xlabel("$Re(z)$")
         pl.ylabel("$Im(z)$")
 
     pl.figure(figsize=(14, 12))
 
-    pl.subplot('221')
-    _plotter(kwargs)
+    cvals = [0.285+0.01j, -0.1+0.651j, -0.4+0.6j, -0.8+0.156j]
+    subplots = ['221',    '222',       '223',     '224'      ]
 
-    kwargs.update(c=-0.1 + 0.651j)
-    pl.subplot('222')
-    _plotter(kwargs)
-
-    kwargs.update(c=-0.4 + 0.6j)
-    pl.subplot('223')
-    _plotter(kwargs)
-
-    kwargs.update(c=-0.8 + 0.156j)
-    pl.subplot('224')
-    _plotter(kwargs)
+    for c, sp in zip(cvals, subplots):
+        kwargs.update(c=c)
+        pl.subplot(sp)
+        _plotter(kwargs)
 
     pl.show()
 
@@ -186,21 +179,25 @@ def main(args):
     elif args.action == 'compare':
         compare_runtimes(kwargs)
 
+description = """ Explore the performance characteristics of Cython and Numpy
+when computing the Julia set."""
+
+help_arg_n = """ The number of grid points in each dimension; larger for more
+resolution.  (default 100)) """
+
+help_arg_a = """ Either *plot* an approximation of a Julia set with resolution
+N (default), or *compare* the runtimes for different implementations.) """
+
 if __name__ == '__main__':
     from argparse import ArgumentParser
 
-    parser = ArgumentParser(description=("Explore the performance characteristics "
-                                         "of Cython and Numpy when computing "
-                                         "the Julia set."))
+    parser = ArgumentParser(description=description)
 
-    parser.add_argument('-N', type=int, default=100,
-            help=("The number of grid points in each dimension; "
-            "larger for more resolution. (default 100)"))
+    parser.add_argument('-N', type=int, default=100, help=help_arg_n)
     parser.add_argument('-a', '--action', type=str, 
-            default='plot', choices=('plot', 'compare'),
-            help=("Either *plot* an approximation of a Julia set "
-            "with resolution N (default), or *compare* the runtimes "
-            "for different implementations."))
+                        default='plot', 
+                        choices=('plot', 'compare'),
+                        help=help_arg_a)
 
     args = parser.parse_args()
     main(args)
