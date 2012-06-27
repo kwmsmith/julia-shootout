@@ -40,19 +40,16 @@ compute_julia(double complex c,
     double *grid = NULL;
 
     julia = (unsigned int*)malloc(N * N * sizeof(unsigned int));
-    if(!julia) {
+    if(!julia)
         return NULL;
-    }
 
     grid = (double*)malloc(N * sizeof(double));
-    if(!grid) {
+    if(!grid)
         goto fail_grid;
-    }
 
     step = (2.0 * bound) / (N-1);
-    for(i=0; i < N; i++) {
+    for(i=0; i < N; i++)
         grid[i] = -bound + i * step;
-    }
 
 #pragma omp parallel for \
     shared(grid, julia, c, lim) private(i,j,idx,x,y)
@@ -70,8 +67,10 @@ compute_julia(double complex c,
 fail_grid:
     if(julia)
         free(julia);
+    julia = NULL;
 success:
     if(grid)
         free(grid);
+    grid = NULL;
     return julia;
 }
