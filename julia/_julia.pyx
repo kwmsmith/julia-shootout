@@ -14,7 +14,7 @@ import numpy as np
 cimport cython
 from libc.stdlib cimport free
 from cpython.cobject cimport PyCObject_FromVoidPtr
-cimport numpy as np
+cimport numpy as cnp
 
 #-----------------------------------------------------------------------------
 # External declarations
@@ -27,7 +27,7 @@ cdef extern from "_julia_ext.h" nogil:
 
 # Necessary to call `np.import_array()` before calling functions from the NumPy
 # C-API.
-np.import_array()
+cnp.import_array()
 
 #-----------------------------------------------------------------------------
 # Cython functions
@@ -36,9 +36,10 @@ def _compute_julia_no_opt(double complex c,
                          unsigned int N,
                          double bound=1.5,
                          double lim=1000.):
-    ''' Cythonized version of a pure Python implementation of the
-    compute_julia() function.  It uses numpy arrays, but does not use any extra
-    syntax to speed things up beyond simple type declarations.
+    ''' 
+    Cythonized version of a pure Python implementation of the compute_julia()
+    function.  It uses numpy arrays, but does not use any extra syntax to speed
+    things up beyond simple type declarations.
 
     '''
     cdef int i, j
@@ -89,8 +90,8 @@ def _compute_julia_opt(double complex c,
 
     '''
 
-    cdef np.ndarray[np.uint32_t, ndim=2, mode='c'] julia 
-    cdef np.ndarray[np.double_t, ndim=1, mode='c'] grid
+    cdef cnp.ndarray[cnp.uint32_t, ndim=2, mode='c'] julia 
+    cdef cnp.ndarray[cnp.double_t, ndim=1, mode='c'] grid
     cdef unsigned int i, j
     cdef double x, y
 
@@ -115,9 +116,9 @@ def _compute_julia_ext(double complex c,
     '''
     t0 = time()
     cdef unsigned int *julia = ext_compute_julia(c, N, bound, lim)
-    cdef np.npy_intp dims[2]
+    cdef cnp.npy_intp dims[2]
     dims[0] = N; dims[1] = N
-    arr = new_array_owns_data_cython(2, dims, np.NPY_UINT, <void*>julia)
+    arr = new_array_owns_data_cython(2, dims, cnp.NPY_UINT, <void*>julia)
     return arr, time() - t0
 
 
@@ -125,11 +126,10 @@ cdef void local_free(void *data):
     ''' Wraps `free()` from C's stdlib with some output to indicate that it's
     been called.
     '''
-    print "freeing data"
     free(data)
 
 cdef object new_array_owns_data(int nd,
-                                np.npy_intp *dims,
+                                cnp.npy_intp *dims,
                                 int typenum,
                                 void *data):
     ''' Creates a Numpy array with data from the `data` buffer.  Sets the array
@@ -137,8 +137,8 @@ cdef object new_array_owns_data(int nd,
     gets cleaned up when the Numpy array object is garbage collected.
 
     '''
-    arr = np.PyArray_SimpleNewFromData(nd, dims, typenum, data)
-    np.set_array_base(arr, PyCObject_FromVoidPtr(data, local_free))
+    arr = cnp.PyArray_SimpleNewFromData(nd, dims, typenum, data)
+    cnp.set_array_base(arr, PyCObject_FromVoidPtr(data, local_free))
     return arr
 
 cdef class _dealloc_shim:
@@ -151,12 +151,11 @@ cdef class _dealloc_shim:
 
     def __dealloc__(self):
         if self._data:
-            print "freeing self._data"
             free(self._data)
         self._data = NULL
 
 cdef object new_array_owns_data_cython(int nd,
-                                       np.npy_intp *dims,
+                                       cnp.npy_intp *dims,
                                        int typenum,
                                        void *data):
     ''' Same as `new_array_owns_data()`, but uses a `_dealloc_shim` instance
@@ -165,9 +164,8 @@ cdef object new_array_owns_data_cython(int nd,
     valid in Python 2.
 
     '''
-    arr = np.PyArray_SimpleNewFromData(nd, dims, typenum, data)
+    arr = cnp.PyArray_SimpleNewFromData(nd, dims, typenum, data)
     cdef _dealloc_shim dd = _dealloc_shim()
     dd._data = data
-    np.set_array_base(arr, dd)
+    cnp.set_array_base(arr, dd)
     return arr
-
