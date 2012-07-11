@@ -70,12 +70,12 @@ def compute_julia_numpy(c, N, bound=2, lim=1000.):
     X, Y = np.ogrid[-bound:bound:N*1j, -bound:bound:N*1j]
     iterations = X + Y * 1j
     count = 0
-    mask = (iterations >= lim)
+    esc_mask = np.zeros_like(julia, dtype=bool)
     t0 = time()
-    while not np.all(mask):
-        new_mask = ~mask & (np.abs(iterations) >= lim)
+    while not np.all(esc_mask):
+        new_mask = ~esc_mask & (np.abs(iterations) >= lim)
         julia[new_mask] = count
-        mask |= new_mask
+        esc_mask |= new_mask
         count += 1
         iterations = iterations**2 + c
     np.seterr(**orig_err)
