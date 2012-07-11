@@ -16,14 +16,22 @@ from libc.stdlib cimport free
 from cpython.cobject cimport PyCObject_FromVoidPtr
 cimport numpy as cnp
 
+# --- Local Ctypedefs --------------------------------------------------------
+# Necessary to declare these typedefs here (not in the cdef extern block).
+# NOTE: Make sure these stay in sync with the _julia_ext.h header typedefs!!
+
+ctypedef double complex cpx_t
+ctypedef double         real_t
+
 #-----------------------------------------------------------------------------
 # External declarations
 #-----------------------------------------------------------------------------
 cdef extern from "_julia_ext.h" nogil:
-    unsigned int ext_julia_kernel "julia_kernel"(double complex, double complex, 
-                                                 double, double)
-    unsigned int *ext_compute_julia "compute_julia"(double complex, unsigned int,
-                                               double, double)
+
+    unsigned int ext_julia_kernel "julia_kernel"(cpx_t, cpx_t, 
+                                                 real_t, real_t)
+    unsigned int *ext_compute_julia "compute_julia"(cpx_t, unsigned int,
+                                               real_t, real_t)
 
 # Necessary to call `np.import_array()` before calling functions from the NumPy
 # C-API.
@@ -32,10 +40,10 @@ cnp.import_array()
 #-----------------------------------------------------------------------------
 # Cython functions
 #-----------------------------------------------------------------------------
-def _compute_julia_no_opt(double complex c,
+def _compute_julia_no_opt(cpx_t c,
                          unsigned int N,
-                         double bound=1.5,
-                         double lim=1000.):
+                         real_t bound=1.5,
+                         real_t lim=1000.):
     ''' 
     Cythonized version of a pure Python implementation of the compute_julia()
     function.  It uses numpy arrays, but does not use any extra syntax to speed
@@ -43,7 +51,7 @@ def _compute_julia_no_opt(double complex c,
 
     '''
     cdef int i, j
-    cdef double x, y
+    cdef real_t x, y
     julia = np.empty((N, N), dtype=np.uint32)
     grid = np.linspace(-bound, bound, N)
     t0 = time()
@@ -54,16 +62,16 @@ def _compute_julia_no_opt(double complex c,
             julia[i,j] = _julia_kernel(x+y*1j, c, lim)
     return julia, time() - t0
 
-cdef inline double cabs_sq(double complex z) nogil:
+cdef inline real_t cabs_sq(cpx_t z) nogil:
     ''' Helper inline function, computes the square of the abs. value of the
     complex number `z`.
     '''
     return z.real * z.real + z.imag * z.imag
 
-cpdef unsigned int _julia_kernel(double complex z, 
-                                 double complex c,
-                                 double lim,
-                                 double cutoff=1e6) nogil:
+cpdef unsigned int _julia_kernel(cpx_t z, 
+                                 cpx_t c,
+                                 real_t lim,
+                                 real_t cutoff=1e6) nogil:
     ''' Cython implementation of the kernel computation.
 
     This is implemented so that no C-API calls are made inside the function
@@ -71,7 +79,7 @@ cpdef unsigned int _julia_kernel(double complex z,
     implementation.
     '''
     cdef unsigned int count = 0
-    cdef double lim_sq = lim * lim
+    cdef real_t lim_sq = lim * lim
     while cabs_sq(z) < lim_sq and count < cutoff:
         z = z * z + c
         count += 1
@@ -79,10 +87,10 @@ cpdef unsigned int _julia_kernel(double complex z,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _compute_julia_opt(double complex c,
+def _compute_julia_opt(cpx_t c,
                        unsigned int N,
-                       double bound=1.5,
-                       double lim=1000.):
+                       real_t bound=1.5,
+                       real_t lim=1000.):
     '''
     Cython `compute_julia()` implementation with Numpy array buffer
     declarations and appropriate compiler directives.  The body of this
@@ -91,9 +99,9 @@ def _compute_julia_opt(double complex c,
     '''
 
     cdef cnp.ndarray[cnp.uint32_t, ndim=2, mode='c'] julia 
-    cdef cnp.ndarray[cnp.double_t, ndim=1, mode='c'] grid
+    cdef cnp.ndarray[real_t, ndim=1, mode='c'] grid
     cdef unsigned int i, j
-    cdef double x, y
+    cdef real_t x, y
 
     julia = np.empty((N, N), dtype=np.uint32)
     grid = np.linspace(-bound, bound, N)
@@ -105,10 +113,10 @@ def _compute_julia_opt(double complex c,
             julia[i,j] = _julia_kernel(x+y*1j, c, lim)
     return julia, time() - t0
 
-def _compute_julia_ext(double complex c,
+def _compute_julia_ext(cpx_t c,
                        unsigned int N,
-                       double bound=1.5,
-                       double lim=1000.):
+                       real_t bound=1.5,
+                       real_t lim=1000.):
     '''
     Call an externally implemented version of `compute_julia()` and wrap the
     resulting C array in a NumPy array.

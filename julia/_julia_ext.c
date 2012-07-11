@@ -12,13 +12,13 @@
 #define CABS_SQ(z) (creal(z) * creal(z) + cimag(z) * cimag(z))
 
 unsigned int
-julia_kernel(double complex z,
-             double complex c,
-             double lim,
-             double cutoff)
+julia_kernel(cpx_t z,
+             cpx_t c,
+             real_t lim,
+             real_t cutoff)
 {
     unsigned int count = 0;
-    double lim_sq = lim * lim;
+    real_t lim_sq = lim * lim;
 
     while(CABS_SQ(z) < lim_sq && count < cutoff) {
         z = z * z + c;
@@ -28,22 +28,22 @@ julia_kernel(double complex z,
 }
 
 unsigned int *
-compute_julia(double complex c,
+compute_julia(cpx_t c,
               unsigned int N,
-              double bound,
-              double lim)
+              real_t bound,
+              real_t lim)
 {
     int i, j, idx;
-    double step, x, y;
+    real_t step, x, y;
 
     unsigned int *julia = NULL;
-    double *grid = NULL;
+    real_t *grid = NULL;
 
     julia = (unsigned int*)malloc(N * N * sizeof(unsigned int));
     if(!julia)
         return NULL;
 
-    grid = (double*)malloc(N * sizeof(double));
+    grid = (real_t*)malloc(N * sizeof(real_t));
     if(!grid)
         goto fail_grid;
 

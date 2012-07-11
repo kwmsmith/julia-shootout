@@ -11,8 +11,11 @@
 
 #include <complex.h>
 
-unsigned int julia_kernel(double complex, double complex, double, double);
+typedef double complex cpx_t;
+typedef double         real_t;
 
-unsigned int *compute_julia(double complex, unsigned int, double, double);
+unsigned int julia_kernel(cpx_t, cpx_t, real_t, real_t);
+
+unsigned int *compute_julia(cpx_t, unsigned int, real_t, real_t);
 
 #endif
