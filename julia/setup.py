@@ -17,8 +17,8 @@ extra_args = []
 # compilers.
 extra_args = ["-fopenmp"]
 
-ext = Extension("_julia", 
-                ["_julia.pyx", "_julia_ext.c"],
+ext = Extension("julia_cython", 
+                ["julia_cython.pyx", "_julia_ext.c"],
                 extra_compile_args=extra_args)
 
 setup(

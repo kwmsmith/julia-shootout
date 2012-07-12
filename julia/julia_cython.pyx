@@ -40,7 +40,7 @@ cnp.import_array()
 #-----------------------------------------------------------------------------
 # Cython functions
 #-----------------------------------------------------------------------------
-def _compute_julia_no_opt(cpx_t c,
+def compute_julia_no_opt(cpx_t c,
                          unsigned int N,
                          real_t bound=1.5,
                          real_t lim=1000.):
@@ -59,7 +59,7 @@ def _compute_julia_no_opt(cpx_t c,
         x = grid[i]
         for j in range(N):
             y = grid[j]
-            julia[i,j] = _julia_kernel(x+y*1j, c, lim)
+            julia[i,j] = kernel(x+y*1j, c, lim)
     return julia, time() - t0
 
 cdef inline real_t cabs_sq(cpx_t z) nogil:
@@ -68,7 +68,7 @@ cdef inline real_t cabs_sq(cpx_t z) nogil:
     '''
     return z.real * z.real + z.imag * z.imag
 
-cpdef unsigned int _julia_kernel(cpx_t z, 
+cpdef unsigned int kernel(cpx_t z, 
                                  cpx_t c,
                                  real_t lim,
                                  real_t cutoff=1e6) nogil:
@@ -87,14 +87,14 @@ cpdef unsigned int _julia_kernel(cpx_t z,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _compute_julia_opt(cpx_t c,
+def compute_julia_opt(cpx_t c,
                        unsigned int N,
                        real_t bound=1.5,
                        real_t lim=1000.):
     '''
     Cython `compute_julia()` implementation with Numpy array buffer
     declarations and appropriate compiler directives.  The body of this
-    function is nearly identical to the `_compute_julia_no_opt()` function.
+    function is nearly identical to the `compute_julia_no_opt()` function.
 
     '''
 
@@ -110,10 +110,10 @@ def _compute_julia_opt(cpx_t c,
         x = grid[i]
         for j in range(N):
             y = grid[j]
-            julia[i,j] = _julia_kernel(x+y*1j, c, lim)
+            julia[i,j] = kernel(x+y*1j, c, lim)
     return julia, time() - t0
 
-def _compute_julia_ext(cpx_t c,
+def compute_julia_ext(cpx_t c,
                        unsigned int N,
                        real_t bound=1.5,
                        real_t lim=1000.):

@@ -3,4 +3,4 @@ all:
 	python setup.py build_ext --inplace
 
 clean:
-	rm -rf build _julia.so _julia.c
+	rm -rf build julia_cython.so julia_cython.c *.pyc

@@ -26,61 +26,11 @@ for details.
 # --- Python / Numpy imports -------------------------------------------------
 import numpy as np
 import pylab as pl
-from time import time
 
-# --- Local imports ----------------------------------------------------------
-# These are distinguished by being prefixed with an underscore, the idea being
-# that these functions are part of an extension module and aren't meant to be
-# used directly from external facing Python code...
-from _julia import (_julia_kernel, _compute_julia_no_opt, 
-                    _compute_julia_opt, _compute_julia_ext)
-
-def julia_kernel(z, c, lim, cutoff=1e6):
-    ''' Computes the number, `n`, of iterations necessary such that 
-    |z_n| > `lim`, where `z_n = z_{n-1}**2 + c`.
-    '''
-    count = 0
-    while abs(z) < lim and count < cutoff:
-        z = z * z + c
-        count += 1
-    return count
-
-
-def compute_julia_python(c, N, bound=2, lim=1000., kernel=julia_kernel):
-    ''' Pure Python calculation of the Julia set for a given `c`.  No NumPy
-    array operations are used.
-    '''
-    julia = np.empty((N, N), dtype=np.uint32)
-    grid = np.linspace(-bound, bound, N)
-    c = complex(c)
-    t0 = time()
-    for i, x in enumerate(grid):
-        for j, y in enumerate(grid):
-            julia[i,j] = kernel(x+y*1j, c, lim)
-    return julia, time() - t0
-
-
-def compute_julia_numpy(c, N, bound=2, lim=1000.):
-    ''' Pure Python calculation of the Julia set for a given `c` using NumPy
-    array operations.
-    '''
-    orig_err = np.seterr()
-    np.seterr(over='ignore', invalid='ignore')
-    julia = np.zeros((N, N), dtype=np.uint32)
-    X, Y = np.ogrid[-bound:bound:N*1j, -bound:bound:N*1j]
-    iterations = X + Y * 1j
-    count = 0
-    esc_mask = np.zeros_like(julia, dtype=bool)
-    t0 = time()
-    while not np.all(esc_mask):
-        new_mask = ~esc_mask & (np.abs(iterations) >= lim)
-        julia[new_mask] = count
-        esc_mask |= new_mask
-        count += 1
-        iterations = iterations**2 + c
-    np.seterr(**orig_err)
-    return julia, time() - t0
-
+# --- Import the various julia set computation modules -----------------------
+import julia_cython
+import julia_python_numpy
+import julia_pure_python
 
 def printer(label, runtime, speedup):
     ''' Given a label, the total runtime in seconds, and a speedup value,
@@ -131,36 +81,36 @@ def plot_julia(kwargs, compute_julia):
 
     pl.show()
 
-
 def compare_runtimes(kwargs):
     ''' Given a parameter dict `kwargs`, runs different implementations of the
     Julia set computation and compares the runtimes of each.
     '''
 
-    ref_julia, python_time = compute_julia_python(**kwargs)
+    ref_julia, python_time = julia_pure_python.compute_julia(**kwargs)
     printer("Python only", python_time, 1.0)
 
-    _, numpy_time = compute_julia_numpy(**kwargs)
+    _, numpy_time = julia_python_numpy.compute_julia(**kwargs)
     assert np.allclose(ref_julia, _)
     printer("Python only + Numpy expressions", numpy_time,
             python_time / numpy_time)
 
-    _, cython_kernel_time = compute_julia_python(kernel=_julia_kernel, **kwargs)
+    _, cython_kernel_time = julia_pure_python.compute_julia(
+                                    kernel=julia_cython.kernel, **kwargs)
     assert np.allclose(ref_julia, _)
     printer("Python + cythonized kernel", cython_kernel_time, 
             python_time / cython_kernel_time)
 
-    _, cython_no_opt_time = _compute_julia_no_opt(**kwargs)
+    _, cython_no_opt_time = julia_cython.compute_julia_no_opt(**kwargs)
     assert np.allclose(ref_julia, _)
     printer("All Cython, no optimizations", cython_no_opt_time, 
             python_time / cython_no_opt_time)
 
-    _, cython_opt_time = _compute_julia_opt(**kwargs)
+    _, cython_opt_time = julia_cython.compute_julia_opt(**kwargs)
     assert np.allclose(ref_julia, _)
     printer("All Cython, Numpy optimizations", cython_opt_time,
             python_time / cython_opt_time)
 
-    _, ext_opt_time = _compute_julia_ext(**kwargs)
+    _, ext_opt_time = julia_cython.compute_julia_ext(**kwargs)
     assert np.allclose(ref_julia, _)
     printer("All C version, wrapped with Cython", ext_opt_time,
             python_time / ext_opt_time)
@@ -175,7 +125,7 @@ def main(args):
                   bound=bound)
 
     if args.action == 'plot':
-        plot_julia(kwargs, _compute_julia_ext)
+        plot_julia(kwargs, julia_cython.compute_julia_ext)
     elif args.action == 'compare':
         compare_runtimes(kwargs)
 
@@ -193,7 +143,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(description=description)
 
-    parser.add_argument('-N', type=int, default=100, help=help_arg_n)
+    parser.add_argument('-N', type=int, default=200, help=help_arg_n)
     parser.add_argument('-a', '--action', type=str, 
                         default='plot', 
                         choices=('plot', 'compare'),
