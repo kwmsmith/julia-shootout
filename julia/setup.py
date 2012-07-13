@@ -17,12 +17,17 @@ extra_args = []
 # compilers.
 extra_args = ["-fopenmp"]
 
-ext = Extension("julia_cython", 
-                ["julia_cython.pyx", "_julia_ext.c"],
-                extra_compile_args=extra_args)
+exts = [Extension("julia_cython", 
+                  ["julia_cython.pyx", "_julia_ext.c"],
+                  extra_compile_args=extra_args),
+        Extension("julia_cython_solution",
+                  ["julia_cython_solution.pyx", "_julia_ext.c"],
+                  extra_compile_args=extra_args),
+        ]
+
 
 setup(
     cmdclass = {'build_ext': build_ext},
-    ext_modules = [ext],
+    ext_modules = exts,
     include_dirs = [np.get_include()],
 )

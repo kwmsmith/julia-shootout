@@ -6,14 +6,6 @@
 # Date: 26 March 2012
 #-----------------------------------------------------------------------------
 
-'''
-Two working functions, compute_julia_section() and compute_julia() are provided
-for you in this module.  Look at them and read them as you complete this
-section of the tutorial.  Your job is to finish the implementation of
-compute_julia_block().  The sections you need to implement are indicated with
-"TODO" comments.
-'''
-
 # --- Python / Numpy imports -------------------------------------------------
 import multiprocessing as mp
 from time import time
@@ -186,18 +178,12 @@ def compute_julia_block(c, N, bound=2, lim=1000., kernel=kernel, num_sections=8)
     # The sections of the grid split over rows, in `chunk` sizes.
     grid_y_sections = grid_x_sections
 
-    #------------------------------------------------------------------------
-    # TODO: Create a list of argument tuples to pass to compute_julia_section()
-    # such that the sections computed are square blocks of the domain rather
-    # than rectangular blocks as in compute_julia() above.  In other words, we
-    # are breaking things up in both x and y dimensions rather than just the x
-    # dimension.
-    #------------------------------------------------------------------------
-
     # create a list of argument tuples to pass to compute_julia_section().
     # Wrapping everything in an argument tuple is required by the map()
     # function interface.
-    compute_julia_section_args = [] # TODO: fill in the list comprehension here.
+    compute_julia_section_args = [(grid_x, grid_y, c, lim, kernel) 
+                                    for grid_x in grid_x_sections
+                                    for grid_y in grid_y_sections]
 
     # Here is where we use a task pool from multiprocessing.
     pool = mp.Pool()
@@ -212,21 +198,10 @@ def compute_julia_block(c, N, bound=2, lim=1000., kernel=kernel, num_sections=8)
     # The result of compute_julia_section() is a section of the final array; we
     # have to concatenate() them along the 0th axis to create the final julia
     # array.
-
-    #------------------------------------------------------------------------
-    # TODO: Like compute_julia(), we have to reconstruct the sections into a
-    # single array after the computations are finished.  This is a bit more
-    # complicated in this version since we've split things out over two
-    # dimensions rather than just one dimension.  Below we allocate an empty
-    # array of the correct shape to hold the result, and it's your job to copy
-    # the computed sections into the right location in this array.
-    #------------------------------------------------------------------------
-
     julia = np.empty((N, N), dtype=np.uint32)
     for i in range(num_sections):
         for j in range(num_sections):
-            # This line is incorrect! You need to fix it.
-            julia[:chunk, :chunk] = julia_sections[0]
+            julia[i*chunk:(i+1)*chunk, j*chunk:(j+1)*chunk] = julia_sections[i*num_sections+j]
 
     # Stop the timer.
     t1 = time() - t0

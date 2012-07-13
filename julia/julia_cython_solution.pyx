@@ -6,14 +6,6 @@
 # Date: 26 March 2012
 #-----------------------------------------------------------------------------
 
-'''
-Your task in this file is primarily to add type information to the functions
-below to help speed up the generated extension module.  First read through the
-source code to gain an understanding of what is going on; compare with the
-julia_pure_python.py file if need be.  The comments marked with "TODO" indicate
-what you need to do for the exercise.
-'''
-
 # --- Python std lib imports -------------------------------------------------
 from time import time
 import numpy as np
@@ -31,96 +23,6 @@ cimport numpy as cnp
 ctypedef double complex cpx_t
 ctypedef double         real_t
 
-# Necessary to call `np.import_array()` before calling functions from the NumPy
-# C-API.
-cnp.import_array()
-
-#-----------------------------------------------------------------------------
-# Cython functions
-#-----------------------------------------------------------------------------
-def compute_julia_no_opt(c, N, bound=1.5, lim=1000.):
-    ''' 
-    Cythonized version of a pure Python implementation of the compute_julia()
-    function.  It uses numpy arrays, but does not use any extra syntax to speed
-    things up beyond simple type declarations.
-
-    '''
-    #-------------------------------------------------------------------------
-    # TODO: Add type information to the function arguments and to the local
-    # variables i, j, x, and y.
-    #-------------------------------------------------------------------------
-    julia = np.empty((N, N), dtype=np.uint32)
-    grid = np.linspace(-bound, bound, N)
-    t0 = time()
-    for i in range(N):
-        x = grid[i]
-        for j in range(N):
-            y = grid[j]
-            julia[i,j] = kernel(x+y*1j, c, lim)
-    return julia, time() - t0
-
-cdef inline real_t cabs_sq(cpx_t z):
-    ''' Helper inline function, computes the square of the abs. value of the
-    complex number `z`.
-    '''
-    return z.real * z.real + z.imag * z.imag
-
-cpdef unsigned int kernel(z, c, lim, cutoff=1e6):
-    ''' Cython implementation of the kernel computation.
-
-    This is implemented so that no C-API calls are made inside the function
-    body.  Even still, there is some overhead as compared with a pure C
-    implementation.
-    '''
-    #-------------------------------------------------------------------------
-    # TODO: Add type information to the function arguments and to the local
-    # variables lim_sq and count.
-    #-------------------------------------------------------------------------
-    lim_sq = lim * lim
-    while cabs_sq(z) < lim_sq and count < cutoff:
-        z = z * z + c
-        count += 1
-    return count
-
-def compute_julia_opt(c, N, bound=1.5, lim=1000.):
-    '''
-    Cython `compute_julia()` implementation with Numpy array buffer
-    declarations and appropriate compiler directives.  The body of this
-    function is nearly identical to the `compute_julia_no_opt()` function.
-
-    '''
-    #-------------------------------------------------------------------------
-    # TODO: Add type information to the function arguments and to the local
-    # variables i, j, x, y.
-    #
-    # Add type information for the numpy arrays `julia` and `grid`.  The
-    # `julia` array is already done for you.
-    #
-    # Add function decorators to turn off boundschecking and wraparound
-    # checking.  The decorators are listed below.
-    # cython.boundscheck(False)
-    # cython.wraparound(False)
-    #-------------------------------------------------------------------------
-
-    cdef cnp.ndarray[cnp.uint32_t, ndim=2, mode='c'] julia 
-
-    julia = np.empty((N, N), dtype=np.uint32)
-    grid = np.linspace(-bound, bound, N)
-    t0 = time()
-    for i in range(N):
-        x = grid[i]
-        for j in range(N):
-            y = grid[j]
-            julia[i,j] = kernel(x+y*1j, c, lim)
-    return julia, time() - t0
-
-#-----------------------------------------------------------------------------
-# Everything below relates to Cython wrapping external code.  It is included
-# here for reference to show you how to properly wrap and call external
-# functions and deal with memory cleanup when you're done with an externally
-# allocated array.
-#-----------------------------------------------------------------------------
-
 #-----------------------------------------------------------------------------
 # External declarations
 #-----------------------------------------------------------------------------
@@ -131,6 +33,85 @@ cdef extern from "_julia_ext.h" nogil:
     unsigned int *ext_compute_julia "compute_julia"(cpx_t, unsigned int,
                                                real_t, real_t)
 
+# Necessary to call `np.import_array()` before calling functions from the NumPy
+# C-API.
+cnp.import_array()
+
+#-----------------------------------------------------------------------------
+# Cython functions
+#-----------------------------------------------------------------------------
+def compute_julia_no_opt(cpx_t c,
+                         unsigned int N,
+                         real_t bound=1.5,
+                         real_t lim=1000.):
+    ''' 
+    Cythonized version of a pure Python implementation of the compute_julia()
+    function.  It uses numpy arrays, but does not use any extra syntax to speed
+    things up beyond simple type declarations.
+
+    '''
+    cdef int i, j
+    cdef real_t x, y
+    julia = np.empty((N, N), dtype=np.uint32)
+    grid = np.linspace(-bound, bound, N)
+    t0 = time()
+    for i in range(N):
+        x = grid[i]
+        for j in range(N):
+            y = grid[j]
+            julia[i,j] = kernel(x+y*1j, c, lim)
+    return julia, time() - t0
+
+cdef inline real_t cabs_sq(cpx_t z) nogil:
+    ''' Helper inline function, computes the square of the abs. value of the
+    complex number `z`.
+    '''
+    return z.real * z.real + z.imag * z.imag
+
+cpdef unsigned int kernel(cpx_t z, 
+                                 cpx_t c,
+                                 real_t lim,
+                                 real_t cutoff=1e6) nogil:
+    ''' Cython implementation of the kernel computation.
+
+    This is implemented so that no C-API calls are made inside the function
+    body.  Even still, there is some overhead as compared with a pure C
+    implementation.
+    '''
+    cdef unsigned int count = 0
+    cdef real_t lim_sq = lim * lim
+    while cabs_sq(z) < lim_sq and count < cutoff:
+        z = z * z + c
+        count += 1
+    return count
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def compute_julia_opt(cpx_t c,
+                       unsigned int N,
+                       real_t bound=1.5,
+                       real_t lim=1000.):
+    '''
+    Cython `compute_julia()` implementation with Numpy array buffer
+    declarations and appropriate compiler directives.  The body of this
+    function is nearly identical to the `compute_julia_no_opt()` function.
+
+    '''
+
+    cdef cnp.ndarray[cnp.uint32_t, ndim=2, mode='c'] julia 
+    cdef cnp.ndarray[real_t, ndim=1, mode='c'] grid
+    cdef unsigned int i, j
+    cdef real_t x, y
+
+    julia = np.empty((N, N), dtype=np.uint32)
+    grid = np.linspace(-bound, bound, N)
+    t0 = time()
+    for i in range(N):
+        x = grid[i]
+        for j in range(N):
+            y = grid[j]
+            julia[i,j] = kernel(x+y*1j, c, lim)
+    return julia, time() - t0
 
 def compute_julia_ext(cpx_t c,
                        unsigned int N,
