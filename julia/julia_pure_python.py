@@ -1,3 +1,11 @@
+#-----------------------------------------------------------------------------
+# Copyright (c) 2012, Enthought, Inc.
+# All rights reserved.  See LICENSE.txt for details.
+# 
+# Author: Kurt W. Smith
+# Date: 26 March 2012
+#-----------------------------------------------------------------------------
+
 # --- Python / Numpy imports -------------------------------------------------
 import numpy as np
 from time import time
