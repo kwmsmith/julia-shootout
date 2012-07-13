@@ -18,10 +18,11 @@ def compute_julia(c, N, bound=2, lim=1000., kernel=kernel):
     array operations are used.
     '''
     julia = np.empty((N, N), dtype=np.uint32)
-    grid = np.linspace(-bound, bound, N)
+    grid_x = np.linspace(-bound, bound, N)
+    grid_y = grid_x * 1j
     c = complex(c)
     t0 = time()
-    for i, x in enumerate(grid):
-        for j, y in enumerate(grid):
-            julia[i,j] = kernel(x+y*1j, c, lim)
+    for i, x in enumerate(grid_x):
+        for j, y in enumerate(grid_y):
+            julia[i,j] = kernel(x+y, c, lim)
     return julia, time() - t0

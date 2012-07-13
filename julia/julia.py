@@ -31,6 +31,7 @@ import pylab as pl
 import julia_cython
 import julia_python_numpy
 import julia_pure_python
+import julia_multiprocessing
 
 def printer(label, runtime, speedup):
     ''' Given a label, the total runtime in seconds, and a speedup value,
@@ -99,6 +100,14 @@ def compare_runtimes(kwargs):
     assert np.allclose(ref_julia, _)
     printer("Python + cythonized kernel", cython_kernel_time, 
             python_time / cython_kernel_time)
+
+    _, mp_time = julia_multiprocessing.compute_julia(kernel=julia_pure_python.kernel, **kwargs)
+    assert np.allclose(ref_julia, _)
+    printer("Multiprocessing + Python kernel", mp_time, python_time / mp_time)
+
+    _, mp_time = julia_multiprocessing.compute_julia(kernel=julia_cython.kernel, **kwargs)
+    assert np.allclose(ref_julia, _)
+    printer("Multiprocessing + cythonized kernel", mp_time, python_time / mp_time)
 
     _, cython_no_opt_time = julia_cython.compute_julia_no_opt(**kwargs)
     assert np.allclose(ref_julia, _)
